@@ -1,5 +1,7 @@
 # README for alter
 
+![Alter header](./alter.png)
+
 `alter` is a command-line tool that takes a list of files followed by instructions on what to do with them. It leverages the OpenAI API and the GPT-4 model to modify the files based on the provided instructions. When finished, it displays to the console every file that was changed and a message detailing the changes. Most importantly, altered files will have their old versions backed up in a `bak` directory underneath the current one, allowing for easy rollback if necessary.
 
 ## Usage
