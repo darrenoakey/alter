@@ -1,41 +1,40 @@
 # README for alter
 
-`alter` is a Python script to automatically modify a list of existing files according to a specified request by leveraging the power of the OpenAI API and the GPT-4 model. This script accepts input as a JSON object which must include existing files and a request for modification.
-
-The response will be JSON formatted which includes:
-
-- `reply`: a message to be shown to the user after the script is created.
-- `files`: an array of {filename, content} objects.
-
-Only files that are changed will be returned in the JSON response.
+`alter` is a command-line tool that takes a list of files followed by instructions on what to do with them. It leverages the OpenAI API and the GPT-4 model to modify the files based on the provided instructions. When finished, it displays to the console every file that was changed and a message detailing the changes. Most importantly, altered files will have their old versions backed up in a `bak` directory underneath the current one, allowing for easy rollback if necessary.
 
 ## Usage
 
 1. Place your OpenAI API key in a file called `openai_api_key.txt` within the `~/.openai/` directory.
-2. Prepare the input JSON object as described above, with existing files and a request for modification.
-3. Run the script in your terminal with the input JSON object: `python3 alter.py <input_json>`
+2. Run the `alter` command in your terminal: `./alter <list_of_files> <instructions>`
 
-## Example
+## Examples
 
-Using the following input JSON object:
+### Single file example
 
-```
-{
-  "files": {
-    "alter": "<content_of_your_python_file>"
-  },
-  "request": "<your_modification_request_here>"
-}
-```
-
-Run the script:
+To alter a file named `example.txt`, run the command:
 
 ```
-python3 alter.py <input_json>
+./alter example.txt "Change this sentence to something else."
 ```
 
-Once the script has successfully completed running, the changed files will be updated accordingly and a reply message will be output in the terminal.
+### Multiple files example - HTML and CSS
+
+To alter an HTML file named `index.html` and a CSS file named `styles.css`, run the command:
+
+```
+./alter index.html styles.css "Update the header to a different color and replace the main headline with 'Welcome to Our Website'."
+```
+
+### Multiple files example - JavaScript
+
+To alter two JavaScript files named `script1.js` and `script2.js`, run the command:
+
+```
+./alter script1.js script2.js "Modify the function in script1.js to return the sum of two numbers and update the event listener in script2.js to call this new function."
+```
+
+Once the script has successfully completed running, the changed files will be updated accordingly, a reply message will be displayed in the terminal, and backup versions of the altered files will be stored in the `bak` directory.
 
 ## Note
 
-The content of the files should be properly formatted as a JSON object so that it can be correctly processed by the script. Invalid JSON or other tokens may cause the script to fail.
+The files can be any format and do not have to be JSON. The content of the files should be plain text so that it can be correctly processed by the script. 
