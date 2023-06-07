@@ -1,0 +1,12 @@
+name: Main trunk build process
+
+on:
+  push:
+
+jobs:
+  build:
+
+    steps:
+
+    - name: Information
+      run: echo this is an empty workflow

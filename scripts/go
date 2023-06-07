@@ -1,0 +1,201 @@
+#!/bin/bash
+set -e
+#set -x
+
+#
+# just set varaibles that we can use for formatting and other stuff
+#
+command=$1
+tab=$(printf '\011')
+normal=$(printf '\033[0m')
+black=$(printf '\033[30m')
+darkred=$(printf '\033[31m')
+darkgreen=$(printf '\033[32m')
+darkyellow=$(printf '\033[33m')
+darkblue=$(printf '\033[34m')
+darkmagenta=$(printf '\033[35m')
+darkcyan=$(printf '\033[36m')
+lightgray=$(printf '\033[37m')
+gray=$(printf '\033[90m')
+red=$(printf '\033[91m')
+green=$(printf '\033[92m')
+yellow=$(printf '\033[93m')
+blue=$(printf '\033[94m')
+magenta=$(printf '\033[95m')
+cyan=$(printf '\033[96m')
+white=$(printf '\033[97m')
+
+#
+# make a semaphore to say whether we've been actioned
+#
+temporary_dir=`dirname $0`/../output
+if [ ! -d $temporary_dir ]; then
+    mkdir $temporary_dir
+fi
+
+
+actioned=${temporary_dir}/$(date +%s)
+touch $actioned
+
+#
+# this allows us to specify each command as a block, and it will check to see if we need to run it or
+# display help or something
+#
+function option() { 
+    if [ -z $command ]; then 
+        printf "${cyan}%-15s${normal} - ${yellow} %s${normal}\n" "$1" "$2"
+        #echo "${cyan}$1   $tab${normal} - ${yellow}$2${normal}"
+        if [ -f $actioned ]; then rm $actioned; fi
+        return 1
+    fi
+    if [[ $command == $1 ]]; then
+        echo "${cyan}--- $command ---${normal}"
+        if [ -f $actioned ]; then rm $actioned; fi
+        return 0; 
+    fi
+    return 1
+}
+
+#
+# find python 3
+#
+if [[ $( which python 2>/dev/null ) =~ /Python3 ]]; then
+    python_bin=python
+    pip_bin=pip
+elif which python3 >/dev/null 2>&1; then
+    python_bin=python3
+    pip_bin=pip3
+else
+    python_bin=python
+    pip_bin=pip
+fi
+[[ -n $PYTHON_BIN ]] && python_bin=$PYTHON_BIN
+[[ -n $PIP_BIN ]] && pip_bin=$PIP_BIN
+
+
+# ----------------------------------------------------------------------------------------------
+# actions - github actions page
+#
+if option actions "open the github actions page"; then    
+    remote=`git remote get-url --push origin`
+    open "${remote//.git/}/actions"
+fi
+
+# ----------------------------------------------------------------------------------------------
+# catchup
+if option catchup "catchup from main"; then 
+   echo "${green}catching up from main${normal}"
+   git pull origin main --rebase
+   git fetch
+fi
+
+# ----------------------------------------------------------------------------------------------
+# clean
+#
+if option clean "clean the repository" ; then
+    git clean -f -x -d
+    git reset HEAD --hard
+fi
+
+# ----------------------------------------------------------------------------------------------
+# edit
+if option edit "open the correct directory in visual studio code"; then 
+    cd `dirname $0`/..
+    code .
+fi
+
+# ----------------------------------------------------------------------------------------------
+# editgo
+if option editgo "edit this go bttch file"; then
+    echo editing go
+    code $0
+fi
+
+# ----------------------------------------------------------------------------------------------
+# github
+#
+if option github "open the project in github" ; then
+    remote=`git remote get-url --push origin`
+    open "${remote//.git/}"
+fi
+
+# ----------------------------------------------------------------------------------------------
+# submit
+# this adds everything and pushes the current branch to git, then 
+#
+if option submit "submit the code to git and create a new branch"; then
+    git_branch=$(git symbolic-ref --short -q HEAD 2>/dev/null)
+    echo git branch is $git_branch
+    if [[ "$git_branch" =~ ^(.*)_([0-9]+)$ ]];then
+        new_branch=${BASH_REMATCH[1]}_$((BASH_REMATCH[2]+1))
+        check=`git branch --list $new_branch`
+        if [ ! -z $check ]; then
+            echo "something is wrong - you are on $git_branch but $new_branch exists"
+            exit 1
+        fi
+    else
+        echo "$git_branch is not in the format submit expects, which is name_number"
+        exit 1
+    fi
+
+    #
+    #  check for a comment
+    #
+    comment=${@: 2};
+    if [ -z "$comment" ]; then
+        echo $red you must provide a checkin comment$normal
+        exit 1
+    fi
+    echo comment is $comment
+
+    #
+    # get feedback
+    #
+    
+    echo "${green}You are currently on ${yellow}${git_branch}${normal}"
+    echo "${green}Your checkin comment is ${yellow}${comment}${normal}"
+    echo "If you continue it will push:"
+    git status
+    echo "${green}And then create a new branch ${yellow}${new_branch}${green} from main${normal}" 
+    read -s -n 1 -p "Press any key to continue . . ."
+
+    #
+    #  add and commit everything
+    #
+    if [ -n "$(git status --porcelain)" ]; then
+        echo adding everything
+        git add --all
+        git commit -m "$comment"
+    fi
+    
+    # 
+    # catchup from main - to check if any conflicts
+    #
+    git pull --rebase origin main
+
+    #
+    # submit the code
+    #
+    git push origin $git_branch
+
+    #
+    # create the new branch
+    #
+    git branch $new_branch remotes/origin/main
+    git checkout $new_branch
+
+    #
+    # show result
+    #
+    echo "${green}${git_branch} was checked in"
+    echo "you are now in ${new_branch}${normal}"
+fi
+
+# ----------------------------------------------------------------------------------------------
+# check that something was done
+#
+if [ -f $actioned ]; then
+    rm $actioned
+    echo "${red}command $yellow$command$red is not understood"
+    echo "run $0 with no arguments to see the list of options$normal"
+fi
