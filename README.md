@@ -40,3 +40,7 @@ Once the script has successfully completed running, the changed files will be up
 ## Note
 
 The files can be any format and do not have to be JSON. The content of the files should be plain text so that it can be correctly processed by the script. 
+
+## License
+
+This project is licensed under [CC BY-NC 4.0](https://darren-static.waft.dev) - free to use and modify, but no commercial use without permission.
